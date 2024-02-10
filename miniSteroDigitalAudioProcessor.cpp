@@ -19,7 +19,6 @@
 //Include Vector variables here
 std::vector<uint32_t> hCoeff;   //To store data from coeff.in
 std::vector<uint16_t> xData;    //To store data from data.in
-std::vector<uint64_t> yOutput;  //To stroe output data computed from the above two vectors
 //End Vector variables
 
 #pragma endregion
@@ -76,6 +75,114 @@ int parse(std::string filePath, uint8_t selectVectorToStoreData)
 
 #pragma endregion
 
+
+uint64_t convoluteCalculation(uint16_t k, uint16_t n)
+{
+    uint64_t result = 0;
+    uint16_t hCOeffSign, hCoeffPOT, xInput;
+    int16_t indexOfxData, tmp;
+    uint8_t readCurrentBitStatus = 0x01;
+    uint8_t hCoeffPOTStatus = 0x00, hCOeffSignStatus = 0x00;
+    uint64_t input, inputTwosComplement;
+
+    indexOfxData = n - k;
+    if(indexOfxData < 0)
+    {
+        result = 0;
+        return result;
+    }
+    else
+    {
+        hCoeffPOT = hCoeff[k] & 0x00FF;
+        hCOeffSign = hCoeff[k] & 0xFF00;
+        hCOeffSign = hCOeffSign >> 8;
+        xInput = xData[indexOfxData];
+        tmp = xInput & 0x8000;
+        if(tmp == 0x8000)
+        {
+            input = 0xFFFFFFFFFFFFFFFF;
+        }
+        else
+        {
+            input = 0x000000000000FFFF;
+        }
+        input = input & xInput;
+        input = input << 16;
+        inputTwosComplement = 0 - input;
+        for(int i = 0; i <= 15; i++)
+        {
+            hCoeffPOTStatus = (uint8_t)hCoeffPOT & readCurrentBitStatus;
+            hCOeffSignStatus = (uint8_t)hCOeffSign & readCurrentBitStatus;
+
+            if((hCOeffSignStatus != readCurrentBitStatus) && (hCoeffPOTStatus != readCurrentBitStatus))
+            {
+                if(result == 0)
+                {
+                    //Do Nothing
+                }
+                else
+                {
+                    result = result >> 1;
+                }
+            }
+            else if((hCOeffSignStatus != readCurrentBitStatus) && (hCoeffPOTStatus == readCurrentBitStatus))
+            {
+                result = result + input;
+                result = result >> 1;
+            }
+            else if((hCOeffSignStatus == readCurrentBitStatus) && (hCoeffPOTStatus != readCurrentBitStatus))
+            {
+                if(result == 0)
+                {
+                    //Do Nothing
+                }
+                else
+                {
+                    result = result >> 1;
+                }
+            }
+            else
+            {
+                result = result + inputTwosComplement;
+                result = result >> 1;
+            }
+
+            readCurrentBitStatus = readCurrentBitStatus << 1;
+        }
+        return result;
+    }
+}
+
+#pragma region Convolution Function
+
+/// @brief The function is used to perform convolution for each data set in data.in file and push the result in yOutput vector
+void convolutionFunction(std::string filePath)
+{
+    uint64_t result = 0;
+    uint16_t n, k;
+    std::vector<uint64_t> yOutput(xData.size(), 0);  //To stroe output data computed from the above two vectors
+
+    for(n = 0; n < xData.size(); n++)
+    {
+        for(k = 0; k <= 255; k++)
+        {
+            result = result + convoluteCalculation(k, n);
+        }
+        yOutput[n] = result;
+        result = 0;
+    }
+
+    std::ofstream file(filePath);
+    for(auto value : yOutput)
+    {
+        value = value & 0x000000ffffffffff;
+        file << std::hex << std::setw(10) << std::setfill('0') << std::uppercase << value << std::endl;
+        //file << std::hex << std::uppercase << value << std::endl;
+    }
+}
+
+#pragma endregion
+
 #pragma region Main Function
 
 /// @brief Main Function to accept three files namely coeff, data and output. Compute the convolution from coeff and data and store it in output
@@ -105,6 +212,10 @@ int main(int argc, char *argv[])
     {
         return 1;
     }
+
+    convolutionFunction(argv[3]);
+
+    std::cout << "Convolution result uploaded to file: " << argv[3] << std::endl;
 
     return 0;
 
