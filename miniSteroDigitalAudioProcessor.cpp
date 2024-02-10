@@ -75,7 +75,12 @@ int parse(std::string filePath, uint8_t selectVectorToStoreData)
 
 #pragma endregion
 
+#pragma region Convolution Calculation
 
+/// @brief Calculate the result of h(k)*x(n-k)
+/// @param k Used to read coefficient in hCoeff vector 
+/// @param n Used to read data in xData vector
+/// @return Calculated result for requested h(k)*x(n-k)
 uint64_t convoluteCalculation(uint16_t k, uint16_t n)
 {
     uint64_t result = 0;
@@ -154,6 +159,8 @@ uint64_t convoluteCalculation(uint16_t k, uint16_t n)
     }
 }
 
+#pragma endregion
+
 #pragma region Convolution Function
 
 /// @brief The function is used to perform convolution for each data set in data.in file and push the result in yOutput vector
@@ -163,7 +170,7 @@ void convolutionFunction(std::string filePath)
     uint16_t n, k;
     std::vector<uint64_t> yOutput(xData.size(), 0);  //To stroe output data computed from the above two vectors
 
-    for(n = 0; n < xData.size(); n++)
+    for(n = 0; n < xData.size(); n++)   //Convolution algorithm
     {
         for(k = 0; k <= 255; k++)
         {
@@ -177,8 +184,7 @@ void convolutionFunction(std::string filePath)
     for(auto value : yOutput)
     {
         value = value & 0x000000ffffffffff;
-        file << std::hex << std::setw(10) << std::setfill('0') << std::uppercase << value << std::endl;
-        //file << std::hex << std::uppercase << value << std::endl;
+        file << std::hex << std::setw(10) << std::setfill('0') << std::uppercase << value << std::endl; //Write value to file
     }
 }
 
