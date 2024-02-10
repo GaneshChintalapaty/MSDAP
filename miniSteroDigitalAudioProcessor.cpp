@@ -81,8 +81,8 @@ uint64_t convoluteCalculation(uint16_t k, uint16_t n)
     uint64_t result = 0;
     uint16_t hCOeffSign, hCoeffPOT, xInput;
     int16_t indexOfxData, tmp;
-    uint8_t readCurrentBitStatus = 0x01;
-    uint8_t hCoeffPOTStatus = 0x00, hCOeffSignStatus = 0x00;
+    uint16_t readCurrentBitStatus = 0x0001;
+    uint16_t hCoeffPOTStatus = 0x0000, hCOeffSignStatus = 0x0000;
     uint64_t input, inputTwosComplement;
 
     indexOfxData = n - k;
@@ -93,9 +93,9 @@ uint64_t convoluteCalculation(uint16_t k, uint16_t n)
     }
     else
     {
-        hCoeffPOT = hCoeff[k] & 0x00FF;
-        hCOeffSign = hCoeff[k] & 0xFF00;
-        hCOeffSign = hCOeffSign >> 8;
+        hCoeffPOT = hCoeff[k] & 0x0000FFFF;
+        hCOeffSign = hCoeff[k] & 0xFFFF0000;
+        hCOeffSign = hCOeffSign >> 16;
         xInput = xData[indexOfxData];
         tmp = xInput & 0x8000;
         if(tmp == 0x8000)
