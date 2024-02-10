@@ -79,7 +79,8 @@ int parse(std::string filePath, uint8_t selectVectorToStoreData)
 uint64_t convoluteCalculation(uint16_t k, uint16_t n)
 {
     uint64_t result = 0;
-    uint16_t hCOeffSign, hCoeffPOT, xInput;
+    uint32_t hCOeffSign, hCoeffPOT;
+    uint16_t xInput;
     int16_t indexOfxData, tmp;
     uint16_t readCurrentBitStatus = 0x0001;
     uint16_t hCoeffPOTStatus = 0x0000, hCOeffSignStatus = 0x0000;
@@ -100,19 +101,19 @@ uint64_t convoluteCalculation(uint16_t k, uint16_t n)
         tmp = xInput & 0x8000;
         if(tmp == 0x8000)
         {
-            input = 0xFFFFFFFFFFFFFFFF;
+            input = 0xFFFFFFFFFFFF0000;
         }
         else
         {
-            input = 0x000000000000FFFF;
+            input = 0x0000000000000000;
         }
-        input = input & xInput;
+        input = input | xInput;
         input = input << 16;
         inputTwosComplement = 0 - input;
         for(int i = 0; i <= 15; i++)
         {
-            hCoeffPOTStatus = (uint8_t)hCoeffPOT & readCurrentBitStatus;
-            hCOeffSignStatus = (uint8_t)hCOeffSign & readCurrentBitStatus;
+            hCoeffPOTStatus = (uint16_t)hCoeffPOT & readCurrentBitStatus;
+            hCOeffSignStatus = (uint16_t)hCOeffSign & readCurrentBitStatus;
 
             if((hCOeffSignStatus != readCurrentBitStatus) && (hCoeffPOTStatus != readCurrentBitStatus))
             {
