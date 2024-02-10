@@ -64,6 +64,7 @@ int parse(std::string filePath, uint8_t selectVectorToStoreData)
             }
         }
         inputFile.close();  //Close file
+        
     }
     else    //If file not open
     {
@@ -114,7 +115,7 @@ uint64_t convoluteCalculation(uint16_t k, uint16_t n)
         }
         input = input | xInput;
         input = input << 16;
-        inputTwosComplement = 0 - input;
+        inputTwosComplement = ~input + 1;
         for(int i = 0; i <= 15; i++)
         {
             hCoeffPOTStatus = (uint16_t)hCoeffPOT & readCurrentBitStatus;
@@ -168,7 +169,7 @@ void convolutionFunction(std::string filePath)
 {
     uint64_t result = 0;
     uint16_t n, k;
-    std::vector<uint64_t> yOutput(xData.size(), 0);  //To stroe output data computed from the above two vectors
+    std::vector<uint64_t> yOutput(xData.size(), 0);  //To store output data computed from the above two vectors
 
     for(n = 0; n < xData.size(); n++)   //Convolution algorithm
     {
