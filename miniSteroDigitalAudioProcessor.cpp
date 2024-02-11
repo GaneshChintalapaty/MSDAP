@@ -78,10 +78,10 @@ int parse(std::string filePath, uint8_t selectVectorToStoreData)
 #pragma region Convolution Calculation
 
 /// @brief Calculate the result of h(k)*x(n-k)
-/// @param k Used to read coefficient in hCoeff vector
+/// @param k Used to read coefficient in hCoeff vector 
 /// @param n Used to read data in xData vector
 /// @return Calculated result for requested h(k)*x(n-k)
-uint64_t convoluteCalculation(uint16_t k, int16_t n)
+uint64_t convoluteCalculation(uint16_t k, uint16_t n)
 {
     uint64_t result = 0;
     uint32_t hCOeffSign, hCoeffPOT;
@@ -91,63 +91,72 @@ uint64_t convoluteCalculation(uint16_t k, int16_t n)
     uint16_t hCoeffPOTStatus = 0x0000, hCOeffSignStatus = 0x0000;
     uint64_t input, inputTwosComplement;
 
-    hCoeffPOT = hCoeff[k] & 0x0000FFFF;
-    hCOeffSign = hCoeff[k] & 0xFFFF0000;
-    hCOeffSign = hCOeffSign >> 16;
-    xInput = xData[indexOfxData];
-    tmp = xInput & 0x8000;
-    if (tmp == 0x8000)
+    indexOfxData = n - k;
+    if(indexOfxData < 0)
     {
-        input = 0xFFFFFFFFFFFF0000;
+        result = 0;
+        return result;
     }
     else
     {
-        input = 0x0000000000000000;
-    }
-    input = input | xInput;
-    input = input << 16;
-    inputTwosComplement = ~input + 1;
-    for (int i = 0; i <= 15; i++)
-    {
-        hCoeffPOTStatus = (uint16_t)hCoeffPOT & readCurrentBitStatus;
-        hCOeffSignStatus = (uint16_t)hCOeffSign & readCurrentBitStatus;
-
-        if ((hCOeffSignStatus != readCurrentBitStatus) && (hCoeffPOTStatus != readCurrentBitStatus))
+        hCoeffPOT = hCoeff[k] & 0x0000FFFF;
+        hCOeffSign = hCoeff[k] & 0xFFFF0000;
+        hCOeffSign = hCOeffSign >> 16;
+        xInput = xData[indexOfxData];
+        tmp = xInput & 0x8000;
+        if(tmp == 0x8000)
         {
-            if (result == 0)
-            {
-                // Do Nothing
-            }
-            else
-            {
-                result = result >> 1;
-            }
-        }
-        else if ((hCOeffSignStatus != readCurrentBitStatus) && (hCoeffPOTStatus == readCurrentBitStatus))
-        {
-            result = result + input;
-            result = result >> 1;
-        }
-        else if ((hCOeffSignStatus == readCurrentBitStatus) && (hCoeffPOTStatus != readCurrentBitStatus))
-        {
-            if (result == 0)
-            {
-                // Do Nothing
-            }
-            else
-            {
-                result = result >> 1;
-            }
+            input = 0xFFFFFFFFFFFF0000;
         }
         else
         {
-            result = result + inputTwosComplement;
-            result = result >> 1;
+            input = 0x0000000000000000;
         }
+        input = input | xInput;
+        input = input << 16;
+        inputTwosComplement = ~input + 1;
+        for(int i = 0; i <= 15; i++)
+        {
+            hCoeffPOTStatus = (uint16_t)hCoeffPOT & readCurrentBitStatus;
+            hCOeffSignStatus = (uint16_t)hCOeffSign & readCurrentBitStatus;
 
-        readCurrentBitStatus = readCurrentBitStatus << 1;
+            if((hCOeffSignStatus != readCurrentBitStatus) && (hCoeffPOTStatus != readCurrentBitStatus))
+            {
+                if(result == 0)
+                {
+                    //Do Nothing
+                }
+                else
+                {
+                    result = result >> 1;
+                }
+            }
+            else if((hCOeffSignStatus != readCurrentBitStatus) && (hCoeffPOTStatus == readCurrentBitStatus))
+            {
+                result = result + input;
+                result = result >> 1;
+            }
+            else if((hCOeffSignStatus == readCurrentBitStatus) && (hCoeffPOTStatus != readCurrentBitStatus))
+            {
+                if(result == 0)
+                {
+                    //Do Nothing
+                }
+                else
+                {
+                    result = result >> 1;
+                }
+            }
+            else
+            {
+                result = result + inputTwosComplement;
+                result = result >> 1;
+            }
+
+            readCurrentBitStatus = readCurrentBitStatus << 1;
+        }
+        return result;
     }
-    return result;
 }
 
 #pragma endregion
@@ -159,30 +168,23 @@ void convolutionFunction(std::string filePath)
 {
     uint64_t result = 0;
     uint16_t n, k;
-    int16_t tmp;
-    std::vector<uint64_t> yOutput(xData.size(), 0); // To store output data computed from the above two vectors
+    std::vector<uint64_t> yOutput(xData.size(), 0);  //To store output data computed from the above two vectors
 
-    for (n = 0; n < xData.size(); n++) // Convolution algorithm
+    for(n = 0; n < xData.size(); n++)   //Convolution algorithm
     {
-        tmp = n;
-        for (k = 0; k <= 255; k++)
+        for(k = 0; k <= 255; k++)
         {
-            result = result + convoluteCalculation(k, tmp);
-            tmp = tmp - 1;
-            if (tmp <= 0)
-            {
-                break;
-            }
+            result = result + convoluteCalculation(k, n);
         }
         yOutput[n] = result;
         result = 0;
     }
 
     std::ofstream file(filePath);
-    for (auto value : yOutput)
+    for(auto value : yOutput)
     {
         value = value & 0x000000ffffffffff;
-        file << std::hex << std::setw(10) << std::setfill('0') << std::uppercase << value << std::endl; // Write value to file
+        file << std::hex << std::setw(10) << std::setfill('0') << std::uppercase << value << std::endl; //Write value to file
     }
 }
 
